@@ -5,6 +5,8 @@ using namespace std;
 SbuSocket::SbuSocket (char* serverHost, int serverPort)
 {
 
+    congWin=2;
+    estimatedRTT=0;
     srand(time(NULL));
     int t=(int)rand()%63999+1000;
 
@@ -19,7 +21,7 @@ SbuSocket::SbuSocket (char* serverHost, int serverPort)
     Segment *segment= synCreator();
     send(segment,false,serverHost);        //send only header of sbutcp
     std::cout<<">>>>>>>>>client side: syn has been sent\n";
-//    printSegment(segment);
+    //    printSegment(segment);
     state=SYN_SENT;     //change state of connection
     //waiting for SYN_ACK from server
     Segment* rcvd_segment;
@@ -42,7 +44,7 @@ SbuSocket::SbuSocket (char* serverHost, int serverPort)
             continue;
         }
         std::cout<<">>>>>>>>>Client side : Synack receive from server:\n";
-//        printSegment(rcvd_segment);
+        //        printSegment(rcvd_segment);
         break;
     }
     Segment* synAck_Ack=ackCreator(rcvd_segment);
@@ -53,6 +55,8 @@ SbuSocket::SbuSocket (char* serverHost, int serverPort)
 SbuSocket::SbuSocket (char* serverHost, int serverPort,int port)
 {
     //set class members
+    congWin=2;
+    estimatedRTT=0;
     this->serverHost=serverHost;
     this->hisPort=serverPort;
     this->myPort=port;
@@ -74,4 +78,23 @@ Segment* SbuSocket::synCreator()
     segment->header.th_timestamp=(unsigned long)time(NULL);
     segment->header.th_sum=chkSum(segment,false);
     return segment;
+}
+bool SbuSocket::write (char* writeBuffer, int size)
+{
+    Segment* segment = new Segment;
+    segment->header.th_dport=this->hisPort;
+    segment->header.th_off=6;
+    segment->header.th_sport=this->myPort;
+    segment->header.th_flags=0;
+    int t_size=size;
+    while(t_size>0){
+        ;
+    }
+}
+void SbuSocket::TOCalculator(Segment* rcvd_segment)//time out calculator
+{
+    float sampleRTT=((uint32_t)time(NULL) - rcvd_segment->header.th_timestamp);
+    estimatedRTT = ALPHA*estimatedRTT + (1-ALPHA)*sampleRTT;
+    TOI=BETA*estimatedRTT;
+    return;
 }

@@ -18,6 +18,8 @@
 #define MSS 536
 #define PROTOCOL_NUM IPPROTO_RAW
 #define BUFSIZE     1500
+#define ALPHA 0.125
+#define BETA 2
 struct sbutcphdr {
    uint16_t th_sport;
    uint16_t th_dport;
