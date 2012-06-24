@@ -47,6 +47,7 @@ SbuSocket::SbuSocket (char* serverHost, int serverPort)
     }
     Segment* synAck_Ack=ackCreator(rcvd_segment);
     send(synAck_Ack,false,serverHost);
+    std::cout<<">>>>>>>>>Client side : Synack_ack has been sent\n";
     state = ESTABILISHED;
 }
 SbuSocket::SbuSocket (char* serverHost, int serverPort,int port)
