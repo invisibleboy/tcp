@@ -11,7 +11,16 @@
 #include<iostream>
 #include<bitset>
 using namespace std;
-void Socket::send(Segment *segment,bool sendData,char * to)
+Socket::Socket()
+{
+
+}
+Socket::~Socket()
+{
+
+}
+
+void Socket::send(Segment *segment,bool hasData,char * to,int sizeOfData)
 {
     int rawSocket;
     //get a raw socket
@@ -34,24 +43,22 @@ void Socket::send(Segment *segment,bool sendData,char * to)
     // cast segment to char * for send
     char *packet=(char *)segment;
     // size of segment that will send
-    int sendSize=sizeof(sbutcphdr)+((sendData)?MSS:0);
-    /*
-    const size_t bits = 8;
-    bitset<8> bitwise_value;
-    for(int i=0;i<sendSize;i++){
-        unsigned char value = packet[i];
-        for ( unsigned int i = 0 ; i < bits ; ++i ) bitwise_value[i] = (value >> i) & 1; //little endian format
-        cout<<bitwise_value<<",";
-    }
-    cout<<endl;
-    */
+    int sendSize=sizeof(sbutcphdr)+((hasData)?sizeOfData:0);
     // now we  can send our segment
     if (sendto(rawSocket, packet,sendSize ,0,(struct sockaddr *)&dst_addr, (socklen_t)sizeof(dst_addr)) < 0)
         cout<<"cann't send datam \n"<<"rawSocket, sendSize"<<rawSocket<<sendSize;
+    SegmentWithSize t;
+    t.segment=segment;
+    t.sizeOfdata=sizeOfData;
+    sendBuff+=t;
 }
-uint16_t Socket::chkSum(Segment* s,bool hasData=true)
+uint16_t Socket::chkSum(Segment* s)
 {
-    return (in_chkSum((uint16_t *)s,((hasData)==true ? sizeof(Segment) : sizeof(sbutcphdr)) ));
+    return (in_chkSum((uint16_t *)s,sizeof(sbutcphdr) ));
+}
+uint16_t Socket::chkSum(SegmentWithSize* s)
+{
+    return (in_chkSum((uint16_t *)s, sizeof(s->sizeOfdata) + sizeof(sbutcphdr)) );
 }
 uint16_t Socket::in_chkSum (uint16_t * addr, int len)
 {
@@ -83,6 +90,28 @@ uint16_t Socket::in_chkSum (uint16_t * addr, int len)
 }
 Segment* Socket::readFromRaw(ip* &iphdr)
 {
+    int s,recv_length;
+    char packet[8000];
+    if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
+        std::cout<<"error";
+        // exit(EXIT_FAILURE);
+    }
+    memset(packet, 0, sizeof(packet));
+    recv_length = recv(s, packet, 8000, 0);
+    struct ip *ipv4;
+    ipv4 = (struct ip*) packet;
+    iphdr=ipv4;
+    char *t=(char*)packet+20;
+    Segment * rcvd_segment=(struct Segment *)(t);
+    SegmentWithSize sws;
+    sws.segment=rcvd_segment;
+    sws.sizeOfdata=recv_length-rcvd_segment->header.th_off*4;;
+    if(!rcvBuff.contains(sws))
+        rcvBuff+=sws;
+    return rcvd_segment;
+}
+Segment* Socket::readFromRaw(ip* &iphdr,int &size)
+{
     // cout<<"function:readFromRow\n";
     int s,recv_length;
     char packet[8000];
@@ -93,27 +122,21 @@ Segment* Socket::readFromRaw(ip* &iphdr)
 
     memset(packet, 0, sizeof(packet));
     recv_length = recv(s, packet, 8000, 0);
-//    printf("Got some bytes\n");
+    //    printf("Got some bytes\n");
     struct ip *ipv4;
     ipv4 = (struct ip*) packet;
-//    for(int i=20;i<44;i++)
-//        cout<<(int)packet[i]<<" ";
-//    cout<<endl;
-//    cout<<"ip src is:"<<inet_ntoa(ipv4->ip_src)<<endl;
     iphdr=ipv4;
-//    char * g =(char *) iphdr;
-//    const size_t bits = 8;
-//    bitset<8> bitwise_value;
-//    for(int i=20;i<44;i++){
-//        unsigned char value = g[i];
-//        for ( unsigned int i = 0 ; i < bits ; ++i ) bitwise_value[i] = (value >> i) & 1; //little endian format
-//        cout<<bitwise_value<<",";
-//    }
-//    cout<<endl;
     char *t=(char*)packet+20;
     Segment * rcvd_segment=(struct Segment *)(t);
+    size=recv_length-rcvd_segment->header.th_off*4;
+    SegmentWithSize sws;
+    sws.segment=rcvd_segment;
+    sws.sizeOfdata=size;
+    if(!rcvBuff.contains(sws))
+        rcvBuff+=sws;
     return rcvd_segment;
 }
+
 void Socket::printSegment(Segment *s)
 {
     std::cout<<"Sport: "<<s->header.th_sport<<" Dport: "<<s->header.th_dport<<" Seq num: "<< s->header.th_seq<<" Ack num:"<<s->header.th_ack<<" flag: "<<(int)s->header.th_flags<<" offset: "<<s->header.th_off<<" SUM: "<<s->header.th_sum<<endl;
@@ -130,6 +153,6 @@ Segment* Socket::ackCreator(Segment* synack)
     segment->header.th_sum=0;
     segment->header.th_off=6;
     segment->header.th_timestamp=(unsigned long)time(NULL);
-    segment->header.th_sum=chkSum(segment,false);
+    segment->header.th_sum=chkSum(segment);
     return segment;
 }

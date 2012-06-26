@@ -10,7 +10,8 @@ Segment* SbuServerSocket::SynackCreator(Segment *rcvd_seg)
 {
     Segment *segment = new Segment;
     srand(time(NULL)+1000);
-    this->seqNum=(int)rand()%2000;//initial random sequence number
+    this->iSeqNum=(int)rand()%2000;//initial random sequence number
+    this->seqNum=this->iSeqNum;
     segment->header.th_flags=18;//CWR,ECE,URG,ACK,PSH,RST,SYN,FIN
     segment->header.th_seq=this->seqNum;
     segment->header.th_dport=rcvd_seg->header.th_sport;
@@ -19,7 +20,7 @@ Segment* SbuServerSocket::SynackCreator(Segment *rcvd_seg)
     segment->header.th_ack=rcvd_seg->header.th_seq+1;
     segment->header.th_off=6;
     segment->header.th_timestamp=rcvd_seg->header.th_timestamp;
-    segment->header.th_sum=chkSum(segment,false);
+    segment->header.th_sum=chkSum(segment);
     return segment;
 }
 SbuSocket SbuServerSocket::accept ()
@@ -28,9 +29,9 @@ SbuSocket SbuServerSocket::accept ()
     while(1) {
         ip *iphdr;
         Segment* rcvd_segment= readFromRaw(iphdr);
-        if(chkSum(rcvd_segment,false)!=0)
+        if(chkSum(rcvd_segment)!=0)
         {
-            std::cout<<"***********Server************checksum faild "<<(int)chkSum(rcvd_segment,false)<<std::endl;
+            std::cout<<"***********Server************checksum faild "<<std::endl;
             continue;
         }
         if(rcvd_segment->header.th_dport!=myPort)
@@ -39,13 +40,14 @@ SbuSocket SbuServerSocket::accept ()
             continue;
         std::cout<<">>>>>>>>>Server side:syn has been received from client:\n";
         Segment* synack=SynackCreator(rcvd_segment);
-        send(synack,false,inet_ntoa(iphdr->ip_src));
+
+        send(synack,false,inet_ntoa(iphdr->ip_src),0);
         std::cout<<">>>>>>>>>Server side: Synack has been sent\n";
         //waiting for ack of synAck
         Segment* rcvd_segment2= readFromRaw(iphdr);
-        if(chkSum(rcvd_segment2,false)!=0)
+        if(chkSum(rcvd_segment2)!=0)
         {
-            std::cout<<"***********Server************checksum faild "<<(int)chkSum(rcvd_segment,false)<<std::endl;
+            std::cout<<"***********Server************Corupted packet"<<std::endl;
             continue;
         }
         if(rcvd_segment2->header.th_dport!=myPort)
