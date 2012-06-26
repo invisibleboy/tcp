@@ -212,7 +212,9 @@ int SbuSocket::read (char* readBuffer, int size)
         send(ackSegment,false,serverHost,0);
         if(rcvd_segment->header.th_flags==8 )
         {
-
+            qSort(rcvBuff.begin(),rcvBuff.end());
+            for(int i=0;i<rcvBuff.size();i++)
+                std::cout<<"seq num: "<<rcvBuff.at(i).segment->header.th_seq<<endl;
         }
     }
 }

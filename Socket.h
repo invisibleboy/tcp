@@ -25,6 +25,10 @@ struct SegmentWithSize{
     {
         return this->segment->header.th_seq==s.segment->header.th_seq;
     }
+    bool operator<(const SegmentWithSize s)const
+    {
+        return this->segment->header.th_seq<s.segment->header.th_seq;
+    }
 };
 
 class Socket{

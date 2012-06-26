@@ -64,8 +64,3 @@ SbuSocket SbuServerSocket::accept ()
     }
 //    this->start();
 }
-void SbuServerSocket::run()
-{
-
-    exec();
-}
