@@ -164,8 +164,19 @@ void SbuSocket::ackListener()
         }
         if(rcvd_segment->header.th_dport!=myPort)
             continue;
+        if(rcvd_segment->header.th_sport!=hisPort)
+        {
+            cout<<"port check failed\n";
+            continue;
+        }
+        if(strcmp(inet_ntoa(iphdr->ip_src),serverHost)!=0)
+        {
+            cout<<"ip check failed\n";
+            continue;
+        }
         if(rcvd_segment->header.th_flags!=2)
             continue;
+        cout<<"ack recieved:"<<rcvd_segment->header.th_ack<<endl;
         TOCalculator(rcvd_segment);
         if(rcvd_segment->header.th_ack>lstByteAcked)
         {
@@ -215,7 +226,6 @@ int SbuSocket::read (char* readBuffer, int size)
             continue;
         if(rcvd_segment->header.th_sport!=hisPort)
         {
-            cout<<"packet sport:"<<rcvd_segment->header.th_sport<<"socket his port"<<hisPort<<endl;
             cout<<"port check failed\n";
             continue;
         }

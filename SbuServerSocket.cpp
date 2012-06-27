@@ -56,9 +56,9 @@ SbuSocket SbuServerSocket::accept ()
             continue;
         std::cout<<">>>>>>>>>Server side:ack of synAck has been received from client:\n";
         state=ESTABILISHED;
-//        std::cout<<rcvd_segment2->header.th_sport;
         SbuSocket new_socket(inet_ntoa(iphdr->ip_src),(int)rcvd_segment2->header.th_sport,this->myPort);
         connectedSockets+=new_socket;
         return new_socket;
     }
+
 }
