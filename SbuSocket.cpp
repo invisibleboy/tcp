@@ -123,7 +123,10 @@ bool SbuSocket::write (char* writeBuffer, int size)
             segment->header.th_timestamp=(uint32_t)time(NULL);
             segment->header.th_seq=this->seqNum;
             int dataSize=((t_size>MSS) ? MSS:t_size);
-            segment->data=writeBuffer+(this->seqNum-this->iSeqNum);
+
+            segment->data=new char[dataSize];
+            for(int i=0;i<dataSize;i++)
+                segment->data[i]=writeBuffer[this->seqNum-this->iSeqNum-1+i];
             segment->header.th_flags=((t_size>MSS) ? 0:8);
             this->seqNum+=dataSize;
             SegmentWithSize *t=new SegmentWithSize(segment,dataSize);
@@ -188,8 +191,9 @@ int SbuSocket::read (char* readBuffer, int size)
         int segmentDataSize;
         ip *iphdr= new ip;
         Segment* rcvd_segment= readFromRaw(iphdr,segmentDataSize);
-
-        if(chkSum(rcvd_segment)!=0)
+        SegmentWithSize *rcvd = new SegmentWithSize(rcvd_segment,segmentDataSize);
+        printSegment(rcvd);
+        if( chkSum(rcvd_segment)!=0)
         {
             //TODO message
             std::cout<<"Corrupt packet";
