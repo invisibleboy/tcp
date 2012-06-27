@@ -10,19 +10,15 @@
 #include<netinet/tcp.h>
 #include<iostream>
 #include<bitset>
+#include <sys/ioctl.h>
 using namespace std;
 
 
 void Socket::send(Segment *segment,bool hasData,char * to,int sizeOfData)
 {
-    int rawSocket;
-    //get a raw socket
-    if((rawSocket = socket(AF_INET, SOCK_RAW, IPPROTO_RAW) )< 0)
-    {
-        cout<<"error on getting raw socket\n";
-        // exit(EXIT_FAILURE);
-    }
 
+    int dontblock = 0;
+    int rc = ioctl(rawSocket, FIONBIO, (char *) &dontblock);
     //destination Address
     struct sockaddr_in dst_addr;
     //destination address type = ipv4
@@ -83,14 +79,10 @@ uint16_t Socket::in_chkSum (uint16_t * addr, int len)
 }
 Segment* Socket::readFromRaw(ip* &iphdr)
 {
-    int s,recv_length;
-    char packet[8000];
-    if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
-        std::cout<<"error";
-        // exit(EXIT_FAILURE);
-    }
+    int rawSocket,recv_length;
+    char packet[800];
     memset(packet, 0, sizeof(packet));
-    recv_length = recv(s, packet, 8000, 0);
+    recv_length = recv(rawSocket, packet, 800, 0);
     struct ip *ipv4;
     ipv4 = (struct ip*) packet;
     iphdr=ipv4;
@@ -104,15 +96,10 @@ Segment* Socket::readFromRaw(ip* &iphdr)
 Segment* Socket::readFromRaw(ip* &iphdr,int &size)
 {
     // cout<<"function:readFromRow\n";
-    int s,recv_length;
+    int recv_length;
     char *packet=new char[800];
-    if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
-        std::cout<<"error";
-        // exit(EXIT_FAILURE);
-    }
-
     memset(packet, 0, sizeof(packet));
-    recv_length = recv(s, packet, 800, 0);
+    recv_length = recv(rawSocket, packet, 800, 0);
     //    printf("Got some bytes\n");
     struct ip *ipv4;
     ipv4 = (struct ip*) packet;
@@ -154,3 +141,16 @@ Segment* Socket::ackCreator(Segment* synack)
     segment->header.th_sum=chkSum(segment);
     return segment;
 }
+Socket::Socket()
+{
+    if ((rawSocket = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
+        std::cout<<"error";
+        // exit(EXIT_FAILURE);
+    }
+    int dontblock = 0;
+    int rc = ioctl(rawSocket, FIONBIO, (char *) &dontblock);
+//    if(rc<=0)
+//        cout<<"error";
+
+}
+

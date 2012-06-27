@@ -35,7 +35,7 @@ class Socket{
 
 
 private:
-
+    int rawSocket;
 protected:
     char* serverHost;//Server IP Address
     int myPort;
@@ -56,10 +56,11 @@ protected:
     void printSegment(SegmentWithSize *s);
     Segment* ackCreator(Segment*);
 public:
-
+    Socket();
 
 
 };
 
 
 #endif // SOCKET_H
+
