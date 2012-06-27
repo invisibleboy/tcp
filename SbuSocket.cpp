@@ -81,7 +81,7 @@ SbuSocket::SbuSocket (const SbuSocket & sbuSocket)
     this->nextByteEx=0;
     this->serverHost=sbuSocket.serverHost;
     this->hisPort=sbuSocket.hisPort;
-    this->state=ESTABILISHED;
+    this->state=sbuSocket.state;
 }
 Segment* SbuSocket::synCreator()
 {
@@ -109,7 +109,7 @@ SbuSocket& SbuSocket::operator =(const SbuSocket& sbuSocket)
     this->nextByteEx=0;
     this->serverHost=sbuSocket.serverHost;
     this->hisPort=sbuSocket.hisPort;
-    this->state=ESTABILISHED;
+    this->state=sbuSocket.state;
     return *this;
 }
 bool SbuSocket::write (char* writeBuffer, int size)
@@ -144,12 +144,7 @@ bool SbuSocket::write (char* writeBuffer, int size)
             SegmentWithSize *t=new SegmentWithSize(segment,dataSize);
             segment->header.th_sum=chkSum(t);
             send(segment,true,serverHost,dataSize);
-<<<<<<< HEAD
-            sleep(1);
             printSegment(t);
-=======
-//            printSegment(t);
->>>>>>> data transmission completed (ack not checked!)
             t_size-= dataSize;
         }
     }
@@ -210,6 +205,7 @@ int SbuSocket::read (char* readBuffer, int size)
         Segment* rcvd_segment= readFromRaw(iphdr,segmentDataSize);
         SegmentWithSize *rcvd = new SegmentWithSize(rcvd_segment,segmentDataSize);
 //        printSegment(rcvd);
+        cout<<"asasasas\n";
         if( chkSum(rcvd)!=0)
         {
             //TODO message
@@ -218,6 +214,17 @@ int SbuSocket::read (char* readBuffer, int size)
         }
         if(rcvd_segment->header.th_dport!=myPort)
             continue;
+        if(rcvd_segment->header.th_sport!=hisPort)
+        {
+            cout<<"packet sport:"<<rcvd_segment->header.th_sport<<"socket his port"<<hisPort<<endl;
+            cout<<"port check failed\n";
+            continue;
+        }
+        if(strcmp(inet_ntoa(iphdr->ip_src),serverHost)!=0)
+        {
+            cout<<"ip check failed\n";
+            continue;
+        }
         if(rcvdBytes+segmentDataSize<=size)
         {
             rcvdBytes+=segmentDataSize;

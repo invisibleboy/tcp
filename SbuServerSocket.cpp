@@ -40,11 +40,11 @@ SbuSocket SbuServerSocket::accept ()
             continue;
         std::cout<<">>>>>>>>>Server side:syn has been received from client:\n";
         Segment* synack=SynackCreator(rcvd_segment);
-
         send(synack,false,inet_ntoa(iphdr->ip_src),0);
         std::cout<<">>>>>>>>>Server side: Synack has been sent\n";
         //waiting for ack of synAck
-        Segment* rcvd_segment2= readFromRaw(iphdr);
+        int datasize=0;
+        Segment* rcvd_segment2= readFromRaw(iphdr,datasize);
         if(chkSum(rcvd_segment2)!=0)
         {
             std::cout<<"***********Server************Corupted packet"<<std::endl;
@@ -55,10 +55,9 @@ SbuSocket SbuServerSocket::accept ()
         if(rcvd_segment2->header.th_flags!=16)
             continue;
         std::cout<<">>>>>>>>>Server side:ack of synAck has been received from client:\n";
-
         state=ESTABILISHED;
-
-        SbuSocket new_socket(inet_ntoa(iphdr->ip_src),(int)rcvd_segment->header.th_sport,this->myPort);
+//        std::cout<<rcvd_segment2->header.th_sport;
+        SbuSocket new_socket(inet_ntoa(iphdr->ip_src),(int)rcvd_segment2->header.th_sport,this->myPort);
         connectedSockets+=new_socket;
         return new_socket;
     }
