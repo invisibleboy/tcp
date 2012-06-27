@@ -1,0 +1,12 @@
+main.cpp
+main.o
+*.o
+moc_*
+MakeFile
+SbuTcp.pro.user
+
+SbuTcp.pro.user
+
+SbuTcp
+
+Makefile

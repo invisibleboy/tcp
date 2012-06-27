@@ -130,6 +130,7 @@ bool SbuSocket::write (char* writeBuffer, int size)
             SegmentWithSize *t=new SegmentWithSize(segment,dataSize);
             segment->header.th_sum=chkSum(t);
             send(segment,true,serverHost,dataSize);
+            sleep(1);
             printSegment(t);
             t_size-= dataSize;
         }
