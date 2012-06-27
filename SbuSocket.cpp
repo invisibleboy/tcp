@@ -143,7 +143,7 @@ bool SbuSocket::write (char* writeBuffer, int size)
             SegmentWithSize *t=new SegmentWithSize(segment,dataSize);
             segment->header.th_sum=chkSum(t);
             send(segment,true,serverHost,dataSize);
-            printSegment(t);
+//            printSegment(t);
             t_size-= dataSize;
         }
     }
@@ -156,6 +156,7 @@ void SbuSocket::ackListener()
     {
         ip *iphdr= new ip;
         Segment* rcvd_segment= readFromRaw(iphdr);
+//        printSegment(rcvd_segment);
         if(chkSum(rcvd_segment)!=0)
         {
             //TODO message
@@ -174,9 +175,9 @@ void SbuSocket::ackListener()
             cout<<"ip check failed\n";
             continue;
         }
-        if(rcvd_segment->header.th_flags!=2)
+        if(rcvd_segment->header.th_flags!=16)
             continue;
-        cout<<"ack recieved:"<<rcvd_segment->header.th_ack<<endl;
+//        cout<<"ack recieved:"<<rcvd_segment->header.th_ack<<endl;
         TOCalculator(rcvd_segment);
         if(rcvd_segment->header.th_ack>lstByteAcked)
         {

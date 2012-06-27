@@ -80,7 +80,7 @@ uint16_t Socket::in_chkSum (uint16_t * addr, int len)
 Segment* Socket::readFromRaw(ip* &iphdr)
 {
     int recv_length;
-    char packet[800];
+    char *packet=new char[800];
     memset(packet, 0, sizeof(packet));
     recv_length = recv(rawSocket, packet, 800, 0);
     struct ip *ipv4;
