@@ -58,7 +58,7 @@ uint16_t Socket::chkSum(Segment* s)
 }
 uint16_t Socket::chkSum(SegmentWithSize* s)
 {
-    return (in_chkSum((uint16_t *)s, sizeof(s->sizeOfdata) + sizeof(sbutcphdr)) );
+    return (in_chkSum((uint16_t *)s->segment, sizeof(s->sizeOfdata) + sizeof(sbutcphdr)) );
 }
 uint16_t Socket::in_chkSum (uint16_t * addr, int len)
 {
@@ -128,7 +128,7 @@ Segment* Socket::readFromRaw(ip* &iphdr,int &size)
     iphdr=ipv4;
     char *t=(char*)packet+20;
     Segment * rcvd_segment=(struct Segment *)(t);
-    size=recv_length-rcvd_segment->header.th_off*4;
+    size=recv_length-rcvd_segment->header.th_off*4-20;
     SegmentWithSize sws;
     sws.segment=rcvd_segment;
     sws.sizeOfdata=size;
@@ -143,7 +143,7 @@ void Socket::printSegment(Segment *s)
 }
 void Socket::printSegment(SegmentWithSize *s)
 {
-    std::cout<<"segment os"<<std::endl;
+    std::cout<<"segment with size"<<s->sizeOfdata<<std::endl;
     std::cout<<"Sport: "<<s->segment->header.th_sport<<" Dport: "<<s->segment->header.th_dport<<" Seq num: "<< s->segment->header.th_seq<<" Ack num:"<<s->segment->header.th_ack<<" flag: "<<(int)s->segment->header.th_flags<<" offset: "<<s->segment->header.th_off<<" SUM: "<<s->segment->header.th_sum<<endl;
     for(int i=0;i<s->sizeOfdata;i++)
         std::cout<<(uint8_t)s->segment->data[i];

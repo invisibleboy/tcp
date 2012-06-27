@@ -192,10 +192,10 @@ int SbuSocket::read (char* readBuffer, int size)
         Segment* rcvd_segment= readFromRaw(iphdr,segmentDataSize);
         SegmentWithSize *rcvd = new SegmentWithSize(rcvd_segment,segmentDataSize);
         printSegment(rcvd);
-        if( chkSum(rcvd_segment)!=0)
+        if( chkSum(rcvd)!=0)
         {
             //TODO message
-            std::cout<<"Corrupt packet";
+            std::cout<<"Corrupt packet\n";
             continue;
         }
         if(rcvd_segment->header.th_dport!=myPort)
