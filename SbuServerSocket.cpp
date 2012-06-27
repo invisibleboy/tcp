@@ -6,7 +6,6 @@ SbuServerSocket::SbuServerSocket(int port)
     this->myPort=port;
     connectedSockets.clear();
 }
-
 Segment* SbuServerSocket::SynackCreator(Segment *rcvd_seg)
 {
     Segment *segment = new Segment;
@@ -26,28 +25,18 @@ Segment* SbuServerSocket::SynackCreator(Segment *rcvd_seg)
 }
 SbuSocket SbuServerSocket::accept ()
 {
-//    QThread *thread =new QThread;
-//    this->moveToThread(thread);
-//    connect(thread, SIGNAL(started()), this, SLOT(acceptHandler()));
-//    connect(this, SIGNAL(acceptFinished()), thread, SLOT(quit()));
-//    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-//    thread->start();
-//    QEventLoop loop;
-//    connect(this,SIGNAL(acceptFinished()),&loop,SLOT(quit()));
-//    loop.exec();
-//    return connectedSockets.last();
     std::cout<<"wait for syn\n";
     while(1) {
         ip *iphdr;
         Segment* rcvd_segment= readFromRaw(iphdr);
+        if(rcvd_segment->header.th_flags!=2)
+            continue;
         if(chkSum(rcvd_segment)!=0)
         {
-            std::cout<<"***********Server************checksum faild "<<std::endl;
+                std::cout<<"***********Server************checksum faild "<<std::endl;
             continue;
         }
         if(rcvd_segment->header.th_dport!=myPort)
-            continue;
-        if(rcvd_segment->header.th_flags!=2)
             continue;
         std::cout<<">>>>>>>>>Server side:syn has been received from client:\n";
         Segment* synack=SynackCreator(rcvd_segment);
@@ -75,5 +64,3 @@ SbuSocket SbuServerSocket::accept ()
     }
     //emit this->acceptFinished();
 }
-
-

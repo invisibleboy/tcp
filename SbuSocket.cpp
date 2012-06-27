@@ -126,10 +126,8 @@ bool SbuSocket::write (char* writeBuffer, int size)
             segment->data=writeBuffer+(this->seqNum-this->iSeqNum);
             segment->header.th_flags=((t_size>MSS) ? 0:8);
             this->seqNum+=dataSize;
-            SegmentWithSize t;
-            t.segment=segment;
-            t.sizeOfdata=dataSize;
-            segment->header.th_sum=chkSum(&t);
+            SegmentWithSize *t=new SegmentWithSize(segment,dataSize);
+            segment->header.th_sum=chkSum(t);
             send(segment,true,serverHost,dataSize);
             t_size-= dataSize;
         }
@@ -199,7 +197,6 @@ int SbuSocket::read (char* readBuffer, int size)
         }
         if(rcvd_segment->header.th_dport!=myPort)
             continue;
-
         if(rcvdBytes+segmentDataSize<size)
         {
             rcvdBytes+=size;

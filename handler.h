@@ -10,9 +10,6 @@ class socketHandler:public QObject{
 public:
     SbuSocket s;
     socketHandler(SbuSocket s);
-
-
-
 public slots:
     void read();
 signals:

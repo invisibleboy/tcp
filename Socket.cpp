@@ -141,6 +141,14 @@ void Socket::printSegment(Segment *s)
 {
     std::cout<<"Sport: "<<s->header.th_sport<<" Dport: "<<s->header.th_dport<<" Seq num: "<< s->header.th_seq<<" Ack num:"<<s->header.th_ack<<" flag: "<<(int)s->header.th_flags<<" offset: "<<s->header.th_off<<" SUM: "<<s->header.th_sum<<endl;
 }
+void Socket::printSegment(SegmentWithSize *s)
+{
+    std::cout<<"segment os"<<std::endl;
+    std::cout<<"Sport: "<<s->segment->header.th_sport<<" Dport: "<<s->segment->header.th_dport<<" Seq num: "<< s->segment->header.th_seq<<" Ack num:"<<s->segment->header.th_ack<<" flag: "<<(int)s->segment->header.th_flags<<" offset: "<<s->segment->header.th_off<<" SUM: "<<s->segment->header.th_sum<<endl;
+    for(int i=0;i<s->sizeOfdata;i++)
+        std::cout<<s->segment->data[i];
+    std::cout<<std::endl;
+}
 Segment* Socket::ackCreator(Segment* synack)
 {
     Segment* segment= new Segment;

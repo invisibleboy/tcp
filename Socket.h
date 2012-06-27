@@ -53,6 +53,7 @@ protected:
     Segment* readFromRaw(ip*&iphdr,int &size);
 //    static bool busyPort[64000];
     void printSegment(Segment *s);
+    void printSegment(SegmentWithSize *s);
     Segment* ackCreator(Segment*);
 public:
 
