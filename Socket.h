@@ -5,7 +5,7 @@
 struct Segment
 {
     struct sbutcphdr header;
-    char* data;
+    char data[MSS];
 };
 struct SegmentWithSize{
     Segment *segment;

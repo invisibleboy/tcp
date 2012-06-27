@@ -123,8 +123,6 @@ bool SbuSocket::write (char* writeBuffer, int size)
             segment->header.th_timestamp=(uint32_t)time(NULL);
             segment->header.th_seq=this->seqNum;
             int dataSize=((t_size>MSS) ? MSS:t_size);
-
-            segment->data=new char[dataSize];
             for(int i=0;i<dataSize;i++)
                 segment->data[i]=writeBuffer[this->seqNum-this->iSeqNum-1+i];
             segment->header.th_flags=((t_size>MSS) ? 0:8);
@@ -132,6 +130,7 @@ bool SbuSocket::write (char* writeBuffer, int size)
             SegmentWithSize *t=new SegmentWithSize(segment,dataSize);
             segment->header.th_sum=chkSum(t);
             send(segment,true,serverHost,dataSize);
+            printSegment(t);
             t_size-= dataSize;
         }
     }
