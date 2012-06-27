@@ -61,5 +61,4 @@ SbuSocket SbuServerSocket::accept ()
         connectedSockets+=new_socket;
         return new_socket;
     }
-    //emit this->acceptFinished();
 }

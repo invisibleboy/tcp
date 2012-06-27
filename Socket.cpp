@@ -79,7 +79,7 @@ uint16_t Socket::in_chkSum (uint16_t * addr, int len)
 }
 Segment* Socket::readFromRaw(ip* &iphdr)
 {
-    int rawSocket,recv_length;
+    int recv_length;
     char packet[800];
     memset(packet, 0, sizeof(packet));
     recv_length = recv(rawSocket, packet, 800, 0);
@@ -95,12 +95,11 @@ Segment* Socket::readFromRaw(ip* &iphdr)
 }
 Segment* Socket::readFromRaw(ip* &iphdr,int &size)
 {
-    // cout<<"function:readFromRow\n";
+
     int recv_length;
     char *packet=new char[800];
     memset(packet, 0, sizeof(packet));
     recv_length = recv(rawSocket, packet, 800, 0);
-    //    printf("Got some bytes\n");
     struct ip *ipv4;
     ipv4 = (struct ip*) packet;
     iphdr=ipv4;
@@ -145,12 +144,8 @@ Socket::Socket()
 {
     if ((rawSocket = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
         std::cout<<"error";
-        // exit(EXIT_FAILURE);
     }
     int dontblock = 0;
     int rc = ioctl(rawSocket, FIONBIO, (char *) &dontblock);
-//    if(rc<=0)
-//        cout<<"error";
-
 }
 

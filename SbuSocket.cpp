@@ -28,7 +28,6 @@ SbuSocket::SbuSocket (char* serverHost, int serverPort)
     Segment *segment= synCreator();
     send(segment,false,serverHost,0);        //send only header of sbutcp
     std::cout<<">>>>>>>>>client side: syn has been sent\n";
-    //    printSegment(segment);
     state=SYN_SENT;     //change state of connection
     //waiting for SYN_ACK from server
     Segment* rcvd_segment;
