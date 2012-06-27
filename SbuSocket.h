@@ -30,7 +30,7 @@ public:
     SbuSocket (char* serverHost, int serverPort);
     SbuSocket (char* serverHost, int serverPort,int port);
     SbuSocket (const SbuSocket & sbuSocket);
-    SbuSocket ();
+    SbuSocket();
     // read size bytes from SOCKET BUFFER and save it to
     // readBuffer and returns the number of bytes in the
     // readBuffer

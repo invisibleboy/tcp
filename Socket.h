@@ -58,8 +58,7 @@ protected:
 public:
 
 
-    Socket();
-    ~Socket();
+
 };
 
 

@@ -2,11 +2,11 @@
 #include <QFuture>
 #include<QtConcurrentRun>
 using namespace std;
+
 SbuSocket::SbuSocket()
 {
 
 }
-
 SbuSocket::SbuSocket (char* serverHost, int serverPort)
 {
 
@@ -74,7 +74,14 @@ SbuSocket::SbuSocket (char* serverHost, int serverPort,int port)
 }
 SbuSocket::SbuSocket (const SbuSocket & sbuSocket)
 {
-
+    this->myPort=sbuSocket.myPort;
+    this->congWin=2;
+    this->estimatedRTT=0;
+    this->lstByteAcked=this->lstByteSent=0;
+    this->nextByteEx=0;
+    this->serverHost=sbuSocket.serverHost;
+    this->hisPort=sbuSocket.hisPort;
+    this->state=ESTABILISHED;
 }
 Segment* SbuSocket::synCreator()
 {
@@ -95,9 +102,16 @@ Segment* SbuSocket::synCreator()
 }
 SbuSocket& SbuSocket::operator =(const SbuSocket& sbuSocket)
 {
-
+    this->myPort=sbuSocket.myPort;
+    this->congWin=2;
+    this->estimatedRTT=0;
+    this->lstByteAcked=this->lstByteSent=0;
+    this->nextByteEx=0;
+    this->serverHost=sbuSocket.serverHost;
+    this->hisPort=sbuSocket.hisPort;
+    this->state=ESTABILISHED;
+    return *this;
 }
-
 bool SbuSocket::write (char* writeBuffer, int size)
 {
     QThread* thread = new QThread;
@@ -130,8 +144,12 @@ bool SbuSocket::write (char* writeBuffer, int size)
             SegmentWithSize *t=new SegmentWithSize(segment,dataSize);
             segment->header.th_sum=chkSum(t);
             send(segment,true,serverHost,dataSize);
+<<<<<<< HEAD
             sleep(1);
             printSegment(t);
+=======
+//            printSegment(t);
+>>>>>>> data transmission completed (ack not checked!)
             t_size-= dataSize;
         }
     }
@@ -175,7 +193,6 @@ void SbuSocket::ackListener()
         }
     }
 }
-
 void SbuSocket::TOCalculator(Segment* rcvd_segment)//time out calculator
 {
     float sampleRTT=((uint32_t)time(NULL) - rcvd_segment->header.th_timestamp);
@@ -192,7 +209,7 @@ int SbuSocket::read (char* readBuffer, int size)
         ip *iphdr= new ip;
         Segment* rcvd_segment= readFromRaw(iphdr,segmentDataSize);
         SegmentWithSize *rcvd = new SegmentWithSize(rcvd_segment,segmentDataSize);
-        printSegment(rcvd);
+//        printSegment(rcvd);
         if( chkSum(rcvd)!=0)
         {
             //TODO message
@@ -201,9 +218,9 @@ int SbuSocket::read (char* readBuffer, int size)
         }
         if(rcvd_segment->header.th_dport!=myPort)
             continue;
-        if(rcvdBytes+segmentDataSize<size)
+        if(rcvdBytes+segmentDataSize<=size)
         {
-            rcvdBytes+=size;
+            rcvdBytes+=segmentDataSize;
         }
         else
         {
@@ -214,8 +231,15 @@ int SbuSocket::read (char* readBuffer, int size)
         if(rcvd_segment->header.th_flags==8 )
         {
             qSort(rcvBuff.begin(),rcvBuff.end());
+            int k=0;
             for(int i=0;i<rcvBuff.size();i++)
-                std::cout<<"seq num: "<<rcvBuff.at(i).segment->header.th_seq<<endl;
+            {
+                for(int j=0;j<rcvBuff.at(i).sizeOfdata;j++,k++)
+                {
+                   readBuffer[k]=rcvBuff.at(i).segment->data[j];
+                }
+            }
+            return rcvdBytes;
         }
     }
 }

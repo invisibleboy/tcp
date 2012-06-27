@@ -11,14 +11,7 @@
 #include<iostream>
 #include<bitset>
 using namespace std;
-Socket::Socket()
-{
 
-}
-Socket::~Socket()
-{
-
-}
 
 void Socket::send(Segment *segment,bool hasData,char * to,int sizeOfData)
 {
@@ -106,22 +99,20 @@ Segment* Socket::readFromRaw(ip* &iphdr)
     SegmentWithSize sws;
     sws.segment=rcvd_segment;
     sws.sizeOfdata=recv_length-rcvd_segment->header.th_off*4;;
-    if(!rcvBuff.contains(sws))
-        rcvBuff+=sws;
     return rcvd_segment;
 }
 Segment* Socket::readFromRaw(ip* &iphdr,int &size)
 {
     // cout<<"function:readFromRow\n";
     int s,recv_length;
-    char packet[8000];
+    char *packet=new char[800];
     if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
         std::cout<<"error";
         // exit(EXIT_FAILURE);
     }
 
     memset(packet, 0, sizeof(packet));
-    recv_length = recv(s, packet, 8000, 0);
+    recv_length = recv(s, packet, 800, 0);
     //    printf("Got some bytes\n");
     struct ip *ipv4;
     ipv4 = (struct ip*) packet;
@@ -132,8 +123,7 @@ Segment* Socket::readFromRaw(ip* &iphdr,int &size)
     SegmentWithSize sws;
     sws.segment=rcvd_segment;
     sws.sizeOfdata=size;
-    if(!rcvBuff.contains(sws))
-        rcvBuff+=sws;
+    rcvBuff<<sws;
     return rcvd_segment;
 }
 
