@@ -55,6 +55,8 @@ protected:
     void printSegment(Segment *s);
     Segment* ackCreator(Segment*);
 public:
+
+
     Socket();
     ~Socket();
 };

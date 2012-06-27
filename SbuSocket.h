@@ -22,6 +22,10 @@ private slots:
 signals:
         void finished();
 public:
+        int his()
+        {
+            return this->hisPort;
+        }
     // this method creates a connection to server and creates // a thread to buffer and acknowledge arrived packets
     SbuSocket (char* serverHost, int serverPort);
     SbuSocket (char* serverHost, int serverPort,int port);

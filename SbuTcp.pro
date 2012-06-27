@@ -5,12 +5,17 @@ QT -= gui
 TARGET = SbuTcp
 CONFIG += console
 CONFIG -= app_bundle
+CONFIG -= x86_64
 TEMPLATE = app
 SOURCES += main.cpp \
     SbuSocket.cpp \
     SbuServerSocket.cpp \
-    Socket.cpp
+    Socket.cpp \
+    handler.cpp
 HEADERS += SbuSocket.h \
     SbuServerSocket.h \
     SbuTcp.h \
-    Socket.h
+    Socket.h \
+    handler.h
+
+

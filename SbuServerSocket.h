@@ -19,8 +19,9 @@ public:
     // this method remove a socket object from first of
     // connected sockets or wait to a connection established.
     void close ();
-public slots:
     SbuSocket accept ();
+
+
     // closes the socket and makes the resources free.
 };
 

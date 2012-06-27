@@ -1,5 +1,6 @@
 #include "SbuServerSocket.h"
 #include <QThread>
+#include <QEventLoop>
 SbuServerSocket::SbuServerSocket(int port)
 {
     this->myPort=port;
@@ -25,6 +26,16 @@ Segment* SbuServerSocket::SynackCreator(Segment *rcvd_seg)
 }
 SbuSocket SbuServerSocket::accept ()
 {
+//    QThread *thread =new QThread;
+//    this->moveToThread(thread);
+//    connect(thread, SIGNAL(started()), this, SLOT(acceptHandler()));
+//    connect(this, SIGNAL(acceptFinished()), thread, SLOT(quit()));
+//    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+//    thread->start();
+//    QEventLoop loop;
+//    connect(this,SIGNAL(acceptFinished()),&loop,SLOT(quit()));
+//    loop.exec();
+//    return connectedSockets.last();
     std::cout<<"wait for syn\n";
     while(1) {
         ip *iphdr;
@@ -62,5 +73,7 @@ SbuSocket SbuServerSocket::accept ()
         connectedSockets+=new_socket;
         return new_socket;
     }
-//    this->start();
+    //emit this->acceptFinished();
 }
+
+

@@ -35,7 +35,7 @@ SbuSocket::SbuSocket (char* serverHost, int serverPort)
     while(1) {
         ip *iphdr;
         rcvd_segment= readFromRaw(iphdr);
-        if(chkSum(&SegmentWithSize(rcvd_segment,0))!=0)
+        if(chkSum(rcvd_segment)!=0)
         {
             cout<<"client side chksum checked!\n";
             continue;
