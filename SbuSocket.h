@@ -3,12 +3,16 @@
 #include<vector>
 #include<QString>
 #include<QObject>
+#include<QTimer>
+#include<QThread>
+#include<QMap>
 #include "Socket.h"
-class SbuSocket:public QObject,Socket{
+class SbuSocket:public QThread,Socket{
     Q_OBJECT
 private:
     int congWin;
     int* ackArray;
+    QTimer** timers;
     int lstByteAcked;
     int lstByteSent;
     int nextByteEx;
@@ -16,9 +20,13 @@ private:
     float TOI;
     enum State {SYN_SENT,ESTABILISHED,FIN_WAIT_1,FIN_WAIT_2,TIME_WAIT,CLOSED}state;
     Segment* synCreator();
+    QTimer *timertest;
     void TOCalculator(Segment* rcvd_segment);
-private slots:
-        void ackListener();
+    void run();
+public slots:
+
+        void retransmitTimeout(int);
+        void test();
 signals:
         void finished();
 public:

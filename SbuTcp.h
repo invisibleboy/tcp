@@ -15,6 +15,7 @@
 #include<iostream>
 #include<bitset>
 #include <inttypes.h>
+#include<sys/time.h>
 #define MSS 536
 #define PROTOCOL_NUM IPPROTO_RAW
 #define BUFSIZE     1500

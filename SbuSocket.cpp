@@ -1,6 +1,8 @@
 #include "SbuSocket.h"
-#include <QFuture>
-#include<QtConcurrentRun>
+#include <QThread>
+#include<QTimer>
+#include<QSignalMapper>
+#include<QMap>
 using namespace std;
 
 SbuSocket::SbuSocket()
@@ -10,10 +12,12 @@ SbuSocket::SbuSocket()
 SbuSocket::SbuSocket (char* serverHost, int serverPort)
 {
 
-    congWin=2;
-    estimatedRTT=0;
-    lstByteAcked=lstByteSent=0;
+    congWin=2*MSS;
+    estimatedRTT=2;
+    lstByteAcked=-1;
+    lstByteSent=0;
     nextByteEx=0;
+    TOI=2000;
     srand(time(NULL));
     int t=(int)rand()%63999+1000;
 
@@ -28,6 +32,7 @@ SbuSocket::SbuSocket (char* serverHost, int serverPort)
     Segment *segment= synCreator();
     send(segment,false,serverHost,0);        //send only header of sbutcp
     std::cout<<">>>>>>>>>client side: syn has been sent\n";
+//    printSegment(segment);
     state=SYN_SENT;     //change state of connection
     //waiting for SYN_ACK from server
     Segment* rcvd_segment;
@@ -50,6 +55,8 @@ SbuSocket::SbuSocket (char* serverHost, int serverPort)
             continue;
         }
         std::cout<<">>>>>>>>>Client side : Synack receive from server:\n";
+//        printSegment(rcvd_segment);
+        TOCalculator(rcvd_segment);
         this->nextByteEx=rcvd_segment->header.th_seq+1;
         break;
     }
@@ -95,7 +102,7 @@ Segment* SbuSocket::synCreator()
     segment->header.th_sport=this->myPort;
     segment->header.th_sum=0;
     segment->header.th_off=6;
-    segment->header.th_timestamp=(unsigned long)time(NULL);
+    segment->header.th_timestamp=getCurrentTime();
     segment->header.th_sum=chkSum(segment);
     return segment;
 }
@@ -113,14 +120,15 @@ SbuSocket& SbuSocket::operator =(const SbuSocket& sbuSocket)
 }
 bool SbuSocket::write (char* writeBuffer, int size)
 {
-    QThread* thread = new QThread;
+    //    QThread* thread = new QThread;
     ackArray = new int[size];
+    timers = new QTimer*[size];
     memset(ackArray,0,size);
-    this->moveToThread(thread);
-    connect(thread, SIGNAL(started()), this, SLOT(ackListener()));
-    connect(this, SIGNAL(finished()), thread, SLOT(quit()));
-    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-    thread->start();
+    //    this->moveToThread(thread);
+    //    connect(thread, SIGNAL(started()), this, SLOT(ackListener()));
+    //    connect(this, SIGNAL(finished()), thread, SLOT(quit()));
+    //    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+    this->start();
 
     Segment* segment = new Segment;
     segment->header.th_dport=this->hisPort;
@@ -130,10 +138,12 @@ bool SbuSocket::write (char* writeBuffer, int size)
     segment->header.th_ack=0;
     int t_size=size;
     while(t_size>0){
-        if(lstByteAcked-lstByteSent<=congWin)
+        if(lstByteAcked-lstByteSent-congWin<=MSS)
         {
+            //            cout<<"sending";
+            cout.flush();
             segment->header.th_sum=0;
-            segment->header.th_timestamp=(uint32_t)time(NULL);
+            segment->header.th_timestamp=getCurrentTime();
             segment->header.th_seq=this->seqNum;
             int dataSize=((t_size>MSS) ? MSS:t_size);
             for(int i=0;i<dataSize;i++)
@@ -142,21 +152,57 @@ bool SbuSocket::write (char* writeBuffer, int size)
             this->seqNum+=dataSize;
             SegmentWithSize *t=new SegmentWithSize(segment,dataSize);
             segment->header.th_sum=chkSum(t);
+            QTimer *t1=new QTimer();
+            QSignalMapper *signalMapper=new QSignalMapper;
+            connect(signalMapper,SIGNAL(mapped(int)),this,SLOT(retransmitTimeout(int)));
+            signalMapper->setMapping(t1,(int)segment->header.th_seq);
+            connect(t1,SIGNAL(timeout()),signalMapper,SLOT(map()));
+            //            connect(t1,SIGNAL(timeout()),this,SLOT(test()));
+            timers[segment->header.th_seq-iSeqNum]=t1;
             send(segment,true,serverHost,dataSize);
-//            printSegment(t);
+            t1->start(this->TOI);
+            //            cout<<"this->TOI"<<this->TOI;;
             t_size-= dataSize;
         }
     }
-    emit finished();
+    //    emit finished();
     delete ackArray;
 }
-void SbuSocket::ackListener()
+void SbuSocket::test()
 {
+    cout<<"test\n";
+    cout.flush();
+    //    exit(1);
+}
+
+void SbuSocket::retransmitTimeout(int sequence)
+{
+    cout<<"retransmition segment:\n";
+    //    cout.flush();
+    SegmentWithSize d;
+    Segment *s=new Segment;
+    s->header.th_seq=sequence;
+    d.segment=s;
+    if(sendBuff.contains(d))
+    {
+        int index=sendBuff.indexOf(d);
+        printSegment(&sendBuff[index]);
+        send(sendBuff[index].segment,true,serverHost,sendBuff[index].sizeOfdata);
+        QTimer *t=(QTimer *)sender();
+        t->start(TOI);
+        //    cout<<"this->TOI"<<this->TOI;;
+    }
+}
+
+void SbuSocket::run()
+{
+
     while(1)
     {
+
         ip *iphdr= new ip;
         Segment* rcvd_segment= readFromRaw(iphdr);
-//        printSegment(rcvd_segment);
+        //        printSegment(rcvd_segment);
         if(chkSum(rcvd_segment)!=0)
         {
             //TODO message
@@ -177,11 +223,14 @@ void SbuSocket::ackListener()
         }
         if(rcvd_segment->header.th_flags!=16)
             continue;
-//        cout<<"ack recieved:"<<rcvd_segment->header.th_ack<<endl;
+        cout<<"************************************************ack recieved:"<<rcvd_segment->header.th_ack<<endl;
+        //if(timers[rcvd_segment->header.th_ack-iSeqNum]!=NULL)
+        timers[rcvd_segment->header.th_ack-1-iSeqNum]->stop();
         TOCalculator(rcvd_segment);
         if(rcvd_segment->header.th_ack>lstByteAcked)
         {
             //@TODO TIMER & congwin
+            congWin+=min((MSS^2/congWin),1);
             lstByteAcked=rcvd_segment->header.th_ack;
             ackArray[rcvd_segment->header.th_ack-iSeqNum]++;
         }
@@ -191,17 +240,29 @@ void SbuSocket::ackListener()
             if(ackArray[rcvd_segment->header.th_ack]==3)
             {
                 SegmentWithSize d;
-                d.segment->header.th_seq=rcvd_segment->header.th_ack;
+                Segment *s=new Segment;
+                s->header.th_seq=rcvd_segment->header.th_ack;
+                d.segment=s;
                 Segment retransmitSegment = *sendBuff[sendBuff.indexOf(d)].segment;
                 send(&retransmitSegment,true,serverHost,sendBuff[sendBuff.indexOf(d)].sizeOfdata);
                 ackArray[rcvd_segment->header.th_ack-iSeqNum]=0;
+                congWin=2*MSS;
             }
         }
     }
+    exec();
+
 }
 void SbuSocket::TOCalculator(Segment* rcvd_segment)//time out calculator
 {
-    float sampleRTT=((uint32_t)time(NULL) - rcvd_segment->header.th_timestamp);
+
+    uint32_t curr=getCurrentTime();
+    float sampleRTT=(curr- rcvd_segment->header.th_timestamp);
+    if(sampleRTT<0)
+    {
+        sampleRTT+=10000000000;
+    }
+    sampleRTT *= 0.001;//converting to milisecond
     estimatedRTT = ALPHA*estimatedRTT + (1-ALPHA)*sampleRTT;
     TOI=BETA*estimatedRTT;
     return;
@@ -215,7 +276,7 @@ int SbuSocket::read (char* readBuffer, int size)
         ip *iphdr= new ip;
         Segment* rcvd_segment= readFromRaw(iphdr,segmentDataSize);
         SegmentWithSize *rcvd = new SegmentWithSize(rcvd_segment,segmentDataSize);
-//        printSegment(rcvd);
+        //        printSegment(rcvd);
         cout<<"asasasas\n";
         if( chkSum(rcvd)!=0)
         {
@@ -253,7 +314,7 @@ int SbuSocket::read (char* readBuffer, int size)
             {
                 for(int j=0;j<rcvBuff.at(i).sizeOfdata;j++,k++)
                 {
-                   readBuffer[k]=rcvBuff.at(i).segment->data[j];
+                    readBuffer[k]=rcvBuff.at(i).segment->data[j];
                 }
             }
             return rcvdBytes;

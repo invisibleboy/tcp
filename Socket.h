@@ -55,6 +55,11 @@ protected:
     void printSegment(Segment *s);
     void printSegment(SegmentWithSize *s);
     Segment* ackCreator(Segment*);
+    /**
+      retutrn current time with 4 digit for second and 6 digit after point ssss.mmmuuu but its fixed point it means
+      currentTime*10^-6 seconds
+    */
+    uint32_t getCurrentTime();
 public:
     Socket();
 

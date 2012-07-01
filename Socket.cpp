@@ -11,12 +11,14 @@
 #include<iostream>
 #include<bitset>
 #include <sys/ioctl.h>
+#include <sys/time.h>
 using namespace std;
 
 
 void Socket::send(Segment *segment,bool hasData,char * to,int sizeOfData)
 {
-
+//    cout<<"Socket::send()\n";
+    cout.flush();
     int dontblock = 0;
     int rc = ioctl(rawSocket, FIONBIO, (char *) &dontblock);
     //destination Address
@@ -136,10 +138,18 @@ Segment* Socket::ackCreator(Segment* synack)
     segment->header.th_sport=this->myPort;
     segment->header.th_sum=0;
     segment->header.th_off=6;
-    segment->header.th_timestamp=(unsigned long)time(NULL);
+    segment->header.th_timestamp=getCurrentTime();
     segment->header.th_sum=chkSum(segment);
     return segment;
 }
+
+uint32_t Socket::getCurrentTime()
+{
+    timeval d;
+    gettimeofday(&d, NULL);
+    return (uint32_t)(d.tv_usec+1000000*(d.tv_sec%10000));
+}
+
 Socket::Socket()
 {
     if ((rawSocket = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
